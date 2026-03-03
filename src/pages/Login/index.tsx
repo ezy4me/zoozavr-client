@@ -10,7 +10,7 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/shared/ui/card";
-import api from "@/shared/api";
+// import api from "@/shared/api";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
