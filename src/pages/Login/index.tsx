@@ -3,14 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/shared/ui/card";
-// import api from "@/shared/api";
+import { Mail, Lock, ArrowRight } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -18,34 +11,43 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     setTimeout(() => {
       localStorage.setItem("token", "fake-token-for-dev");
-      
       setIsLoading(false);
       navigate("/");
-    }, 500);
+    }, 800);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <Card className="w-full max-w-md shadow-xl border-t-4 border-t-green-600">
-        <CardHeader className="space-y-1 text-center">
-          <div className="text-5xl mb-4">🦖</div>
-          <CardTitle className="text-3xl font-bold tracking-tight text-slate-900">
+    <div className="min-h-screen flex flex-col bg-slate-50 relative overflow-hidden">
+      {/* Декоративные круги на фоне для "мобильного" стиля */}
+      <div className="absolute -top-24 -right-24 w-64 h-64 bg-green-100 rounded-full blur-3xl opacity-60" />
+      <div className="absolute top-1/2 -left-32 w-80 h-80 bg-blue-100 rounded-full blur-3xl opacity-50" />
+
+      <div className="flex-1 flex flex-col justify-center px-6 py-12 relative z-10">
+        {/* Хедер с логотипом */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-[28px] shadow-xl shadow-green-100 mb-6 animate-bounce-slow">
+            <span className="text-5xl">🦖</span>
+          </div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">
             Zoozavr
-          </CardTitle>
-          <CardDescription className="text-slate-500">
-            Введите корпоративные данные для доступа
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="grid gap-6">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Электронная почта</Label>
+          </h1>
+          <p className="text-slate-500 font-medium">
+            База знаний для команды
+          </p>
+        </div>
+
+        {/* Форма */}
+        <form onSubmit={handleLogin} className="space-y-5 max-w-sm mx-auto w-full">
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-slate-600 ml-1 font-semibold">Почта</Label>
+            <div className="relative">
+              <Mail className="absolute left-4 top-3.5 text-slate-400" size={18} />
               <Input 
                 id="email" 
                 type="email" 
@@ -53,13 +55,15 @@ const handleLogin = (e: React.FormEvent) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required 
-                className="bg-white"
+                className="pl-11 h-12 bg-white border-slate-200 rounded-2xl focus:ring-green-500 focus:border-green-500 shadow-sm transition-all"
               />
             </div>
-            <div className="grid gap-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Пароль</Label>
-              </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-slate-600 ml-1 font-semibold">Пароль</Label>
+            <div className="relative">
+              <Lock className="absolute left-4 top-3.5 text-slate-400" size={18} />
               <Input 
                 id="password" 
                 type="password" 
@@ -67,19 +71,36 @@ const handleLogin = (e: React.FormEvent) => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required 
-                className="bg-white"
+                className="pl-11 h-12 bg-white border-slate-200 rounded-2xl focus:ring-green-500 focus:border-green-500 shadow-sm transition-all"
               />
             </div>
-            <Button 
-              type="submit" 
-              className="w-full bg-green-700 hover:bg-green-800 text-white font-semibold h-11" 
-              disabled={isLoading}
-            >
-              {isLoading ? "Вход в систему..." : "Войти"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+
+          <Button 
+            type="submit" 
+            className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold h-14 rounded-2xl shadow-lg shadow-slate-200 flex items-center justify-center gap-2 group transition-all active:scale-[0.98]" 
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <>
+                Войти в систему
+                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              </>
+            )}
+          </Button>
+        </form>
+
+        <p className="mt-10 text-center text-slate-400 text-sm">
+          Забыли пароль? <span className="text-green-700 font-semibold cursor-pointer">Связаться с ИТ</span>
+        </p>
+      </div>
+
+      {/* Футер */}
+      <div className="py-6 text-center text-slate-300 text-[10px] uppercase tracking-widest font-bold">
+        v 1.0.4 — Green Future
+      </div>
     </div>
   );
 }
