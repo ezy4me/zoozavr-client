@@ -5,7 +5,7 @@ import path from "path";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  base: "/",
+  base: "/zoozavr-client/",
   plugins: [
     react(),
     tailwindcss(),
@@ -23,9 +23,9 @@ export default defineConfig({
         background_color: "#ffffff",
         display: "standalone",
         orientation: "portrait",
-        start_url: "/",
-        scope: "/",
-        id: "/",
+        start_url: "/zoozavr-client/",
+        scope: "/zoozavr-client/",
+        id: "/zoozavr-client/",
         icons: [
           {
             src: "https://cdn-icons-png.flaticon.com/512/616/616430.png",
