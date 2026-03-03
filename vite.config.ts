@@ -5,15 +5,15 @@ import path from "path";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
+  base: "/zoozavr-client/",
   plugins: [
     react(),
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
-      // Оставляем только то, что реально может быть в public
       includeAssets: ["favicon.ico", "apple-touch-icon.png"],
       devOptions: {
-        enabled: true, // Позволяет тестировать PWA в dev-режиме по локальной сети
+        enabled: true,
       },
       manifest: {
         name: "Zoozavr Knowledge Base",
@@ -23,9 +23,9 @@ export default defineConfig({
         background_color: "#ffffff",
         display: "standalone",
         orientation: "portrait",
-        start_url: "/",
-        scope: "/",
-        id: "/", // Уникальный идентификатор приложения
+        start_url: "/zoozavr-client/",
+        scope: "/zoozavr-client/",
+        id: "/zoozavr-client/",
         icons: [
           {
             src: "https://cdn-icons-png.flaticon.com/512/616/616430.png",
@@ -41,7 +41,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg}"], // Кешируем статику
+        globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
         runtimeCaching: [
           {
             urlPattern: ({ url }) =>
