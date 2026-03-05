@@ -5,7 +5,6 @@ export default function CategoryPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // Имитация данных из таблицы Subcategory
   const subcategories = [
     { id: 101, name: "Основы бренда", count: 4 },
     { id: 102, name: "Стандарты внешнего вида", count: 2 },

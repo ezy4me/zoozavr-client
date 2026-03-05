@@ -23,7 +23,6 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
-      // ПОЛНОЕ ОТКЛЮЧЕНИЕ ПРОВЕРОК НА НЕИСПОЛЬЗУЕМЫЕ ПЕРЕМЕННЫЕ
       "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": "off",
       "@typescript-eslint/no-explicit-any": "off"

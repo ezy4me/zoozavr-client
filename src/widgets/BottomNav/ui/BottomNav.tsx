@@ -2,7 +2,6 @@ import { Home, BookOpen, Trophy, User, type LucideIcon } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/shared/lib/utils";
 
-// Описываем структуру одного пункта меню
 interface NavItem {
   label: string;
   icon: LucideIcon;
@@ -23,7 +22,7 @@ export const BottomNav = () => {
     <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-110 h-16 bg-white border-t border-slate-200 flex items-center justify-around px-2 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-50">
       {navItems.map((item) => {
         const isActive = location.pathname === item.path;
-        const Icon = item.icon; // Теперь TS уверен, что это компонент иконки
+        const Icon = item.icon; 
 
         return (
           <Link

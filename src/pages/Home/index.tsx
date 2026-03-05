@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { CheckCircle2, Clock, Trophy } from "lucide-react";
 
 export default function HomePage() {
-  // Имитация данных из UserCourses + CourseStatuses
   const activeCourses = [
     {
       id: 1,
@@ -57,7 +56,6 @@ export default function HomePage() {
         ))}
       </section>
 
-      {/* Блок достижений из UserTestResults */}
       <section className="p-6 rounded-[32px] bg-slate-900 text-white relative overflow-hidden">
         <div className="relative z-10">
           <p className="text-green-400 text-[10px] font-bold uppercase tracking-widest mb-2">

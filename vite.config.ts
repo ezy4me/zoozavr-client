@@ -16,11 +16,11 @@ export default defineConfig({
         enabled: true,
       },
       manifest: {
-        name: "Zoozavr Knowledge Base",
-        short_name: "Zoozavr",
-        description: "Corporate LMS with Offline Support",
-        theme_color: "#2d5a27",
-        background_color: "#ffffff",
+        name: "Зоозавр: База знаний", 
+        short_name: "Зоозавр", 
+        description: "Корпоративное обучение команды Зоозавр",
+        theme_color: "#0f172a", 
+        background_color: "#ffffff", 
         display: "standalone",
         orientation: "portrait",
         start_url: "/zoozavr-client/",
@@ -28,12 +28,12 @@ export default defineConfig({
         id: "/zoozavr-client/",
         icons: [
           {
-            src: "https://cdn-icons-png.flaticon.com/512/616/616430.png",
+            src: "zoozavr.png",
             sizes: "192x192",
             type: "image/png",
           },
           {
-            src: "https://cdn-icons-png.flaticon.com/512/616/616430.png",
+            src: "zoozavr.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "any maskable",
