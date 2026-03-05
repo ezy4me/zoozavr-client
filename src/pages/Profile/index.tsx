@@ -7,21 +7,23 @@ import {
   Zap,
   ChevronRight,
 } from "lucide-react";
-import { Button } from "@/shared/ui/button";
+import { useUserStore } from "@/shared/store/useUserStore";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
+  // Подключаем данные из нашего хранилища
+  const { xp, completedCourses } = useUserStore();
 
   const userStats = [
     {
       label: "Курсы",
-      value: "12",
+      value: completedCourses.length.toString(),
       icon: <BookOpen size={16} />,
       color: "bg-blue-50 text-blue-600",
     },
     {
       label: "Опыт XP",
-      value: "1,850",
+      value: xp.toLocaleString(),
       icon: <Zap size={16} />,
       color: "bg-orange-50 text-orange-600",
     },
