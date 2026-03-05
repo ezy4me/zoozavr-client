@@ -11,8 +11,7 @@ import { useUserStore } from "@/shared/store/useUserStore";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  // Подключаем данные из нашего хранилища
-  const { xp, completedCourses } = useUserStore();
+  const { xp, completedCourses, name, logout } = useUserStore();
 
   const userStats = [
     {
@@ -35,8 +34,8 @@ export default function ProfilePage() {
     },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem("auth");
+  const handleLogout = async () => {
+    await logout(); 
     navigate("/login");
   };
 
@@ -48,7 +47,7 @@ export default function ProfilePage() {
             Профиль
           </h1>
           <p className="text-slate-500 font-medium text-sm">
-            ID сотрудника: #0442
+            Сотрудник Зоозавра
           </p>
         </div>
         <button
@@ -60,12 +59,12 @@ export default function ProfilePage() {
 
       <div className="p-6 rounded-[32px] bg-slate-900 text-white flex items-center gap-6 relative overflow-hidden shadow-xl shadow-slate-200">
         <div className="w-20 h-20 bg-white/10 rounded-[24px] flex items-center justify-center text-4xl border border-white/20 backdrop-blur-sm relative z-10">
-          🐶
+          🦖
         </div>
         <div className="relative z-10">
-          <h2 className="text-xl font-bold">Иван Иванов</h2>
+          <h2 className="text-xl font-bold">{name || "Загрузка..."}</h2>
           <p className="text-green-400 text-[10px] font-black uppercase tracking-[0.2em] mt-1">
-            Продавец-консультант
+            Команда Зоозавр
           </p>
         </div>
         <div className="absolute -right-4 -bottom-6 text-7xl opacity-10 rotate-12 italic font-black select-none uppercase">

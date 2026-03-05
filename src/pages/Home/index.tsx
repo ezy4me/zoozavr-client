@@ -3,31 +3,44 @@ import { Link, useNavigate } from "react-router-dom";
 import { CheckCircle2, Clock, Trophy, Zap, ChevronRight } from "lucide-react";
 import { useUserStore } from "@/shared/store/useUserStore";
 import { CourseCardSkeleton, Skeleton } from "@/shared/ui/Skeleton";
+import api from "@/shared/api/"; 
+
+interface Course {
+  id: number;
+  name: string;
+  progress?: number;
+  last_lesson?: string;
+}
 
 export default function HomePage() {
   const { xp, completedCourses, name } = useUserStore();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
+  const [activeCourses, setActiveCourses] = useState<Course[]>([]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1000);
-    return () => clearTimeout(timer);
-  }, []);
+    const fetchHomeData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await api.get("/courses");
+        
+        const coursesData = response.data.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          progress: c.userProgress?.[0]?.points || (completedCourses.includes(c.id) ? 100 : 0),
+          last_lesson: c.materials?.[0]?.name || "Начать обучение",
+        }));
 
-  const activeCourses = [
-    {
-      id: 1,
-      name: "Введение в Зоозавр",
-      progress: completedCourses.includes(1) ? 100 : 33,
-      last_lesson: "История бренда",
-    },
-    {
-      id: 3,
-      name: "Техники продаж 5 шагов",
-      progress: completedCourses.includes(3) ? 100 : 10,
-      last_lesson: "Установление контакта",
-    },
-  ];
+        setActiveCourses(coursesData);
+      } catch (error) {
+        console.error("Ошибка при загрузке курсов:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchHomeData();
+  }, [completedCourses]);
 
   return (
     <div className="p-6 space-y-8">
@@ -35,13 +48,13 @@ export default function HomePage() {
         <div className="space-y-1">
           {isLoading ? (
             <>
-              <Skeleton className="h-8 w-40" />
+              <Skeleton className="h-8 w-40 mb-2" />
               <Skeleton className="h-4 w-56" />
             </>
           ) : (
             <>
               <h1 className="text-3xl font-black text-slate-900 italic uppercase tracking-tighter">
-                Привет, {name.split(' ')[0]}!
+                Привет, {name?.split(' ')[0] || 'Коллега'}!
               </h1>
               <p className="text-slate-500 text-sm font-medium">
                 Продолжи обучение в Зоозавре
@@ -98,7 +111,7 @@ export default function HomePage() {
               <CourseCardSkeleton />
               <CourseCardSkeleton />
             </>
-          ) : (
+          ) : activeCourses.length > 0 ? (
             activeCourses.map((course) => (
               <Link
                 key={course.id}
@@ -129,6 +142,11 @@ export default function HomePage() {
                 </div>
               </Link>
             ))
+          ) : (
+            <div className="p-10 text-center bg-slate-50 rounded-[32px] border-2 border-dashed border-slate-200">
+               <p className="text-slate-400 font-bold text-sm uppercase">Нет активных курсов</p>
+               <Link to="/courses" className="text-green-600 text-xs font-black uppercase mt-2 block">Выбрать обучение</Link>
+            </div>
           )}
         </div>
       </section>

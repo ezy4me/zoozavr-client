@@ -4,22 +4,33 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Mail, Lock, ArrowRight } from "lucide-react";
+import { useUserStore } from "@/shared/store/useUserStore"; // Твой стор
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  // На бэкенде мы используем 'login', заменим переменную для ясности
+  const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const loginUser = useUserStore((state) => state.login);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
 
-    setTimeout(() => {
-      localStorage.setItem("auth", "true");
-      setIsLoading(false);
+    try {
+      // Вызываем реальный логин из стора
+      await loginUser(login, password);
       navigate("/");
-    }, 800);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Ошибка авторизации");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -41,11 +52,17 @@ export default function LoginPage() {
         <form
           onSubmit={handleLogin}
           className="space-y-5 max-w-sm mx-auto w-full">
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-xs font-bold uppercase text-center">
+              {error}
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label
-              htmlFor="email"
+              htmlFor="login"
               className="text-slate-600 ml-1 font-semibold">
-              Электронная почта
+              Логин или почта
             </Label>
             <div className="relative">
               <Mail
@@ -53,11 +70,11 @@ export default function LoginPage() {
                 size={18}
               />
               <Input
-                id="email"
-                type="email"
-                placeholder="ivanov@zoozavr.ru"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="login"
+                type="text"
+                placeholder="ivanov"
+                value={login}
+                onChange={(e) => setLogin(e.target.value)}
                 required
                 className="pl-11 h-12 bg-white border-slate-200 rounded-2xl focus:ring-green-500 focus:border-green-500 shadow-sm transition-all"
               />
