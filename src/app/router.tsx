@@ -10,6 +10,7 @@ import CoursesPage from "@/pages/Courses";
 import CategoryPage from "@/pages/Category";
 import SubcategoryPage from "@/pages/Subcategory";
 import CourseDetailPage from "@/pages/CourseDetail";
+import MaterialPage from "@/pages/Material";
 import LeaderboardPage from "@/pages/Leaderboard";
 import ProfilePage from "@/pages/Profile";
 import TestPage from "@/pages/Test";
@@ -56,6 +57,7 @@ const router = createBrowserRouter(
         { path: "/category/:id", element: <CategoryPage /> },
         { path: "/subcategory/:id", element: <SubcategoryPage /> },
         { path: "/course/:id", element: <CourseDetailPage /> },
+        { path: "/material/:id", element: <MaterialPage /> },
         { path: "/leaderboard", element: <LeaderboardPage /> },
         { path: "/profile", element: <ProfilePage /> },
         { path: "/test/:id", element: <TestPage /> },

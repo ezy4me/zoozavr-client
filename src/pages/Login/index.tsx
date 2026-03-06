@@ -4,10 +4,9 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Mail, Lock, ArrowRight } from "lucide-react";
-import { useUserStore } from "@/shared/store/useUserStore"; // Твой стор
+import { useUserStore } from "@/shared/store/useUserStore"; 
 
 export default function LoginPage() {
-  // На бэкенде мы используем 'login', заменим переменную для ясности
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -22,7 +21,6 @@ export default function LoginPage() {
     setError("");
 
     try {
-      // Вызываем реальный логин из стора
       await loginUser(login, password);
       navigate("/");
     } catch (err: any) {

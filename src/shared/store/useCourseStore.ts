@@ -1,86 +1,134 @@
 import { create } from "zustand";
 import api from "../api";
-
-interface Material {
-  id: number;
-  name: string;
-  type: "text" | "video";
-  isCompleted: boolean;
-  content?: string;
-}
-
-interface Course {
-  id: number;
-  name: string;
-  testId: number;
-  materials: Material[];
-}
+import type { ICourse, ITest, ICategory, ISubcategory } from "../types";
 
 interface CourseState {
-  categories: any[];
-  currentCourse: Course | null;
+  categories: ICategory[];
+  currentCategory: ICategory | null;
+  currentSubcategory: ISubcategory | null;
+  currentCourse: ICourse | null;
+  currentTest: ITest | null;
   isLoading: boolean;
-  
-  // Методы
+
+  // Методы загрузки
   fetchCategories: () => Promise<void>;
+  fetchCategoryDetail: (id: string | number) => Promise<void>;
+  fetchSubcategoryDetail: (id: string | number) => Promise<void>;
   fetchCourseDetail: (id: string | number) => Promise<void>;
+  fetchTestDetail: (id: string | number) => Promise<void>;
+  fetchMaterialContent: (path: string) => Promise<string>;
+
+  // Методы действий
   completeMaterial: (materialId: number) => Promise<void>;
-  submitTest: (testId: number, answers: any) => Promise<{ success: boolean; score: number }>;
+  submitTest: (
+    testId: number,
+    payload: { score: number; answers: any },
+  ) => Promise<{
+    message: string;
+    result: { score: number };
+  }>;
 }
 
 export const useCourseStore = create<CourseState>((set, get) => ({
   categories: [],
+  currentCategory: null,
+  currentSubcategory: null,
   currentCourse: null,
+  currentTest: null,
   isLoading: false,
 
   fetchCategories: async () => {
     set({ isLoading: true });
     try {
-      const response = await api.get("/categories");
-      set({ categories: response.data });
-    } catch (e) {
-      console.error("Ошибка загрузки категорий", e);
+      const { data } = await api.get<ICategory[]>("/categories");
+      set({ categories: data });
     } finally {
       set({ isLoading: false });
     }
   },
 
-  fetchCourseDetail: async (id) => {
-    set({ isLoading: true });
+  fetchCategoryDetail: async (id) => {
+    set({ isLoading: true, currentCategory: null });
     try {
-      const response = await api.get(`/courses/${id}`);
-      set({ currentCourse: response.data });
-    } catch (e) {
-      console.error("Ошибка загрузки курса", e);
+      const { data } = await api.get<ICategory>(`/categories/${id}`);
+      set({ currentCategory: data });
     } finally {
       set({ isLoading: false });
     }
   },
 
+  // Получаем подкатегорию и её курсы
+  fetchSubcategoryDetail: async (id) => {
+    set({ isLoading: true, currentSubcategory: null });
+    try {
+      const { data } = await api.get<ISubcategory>(`/subcategories/${id}`);
+      set({ currentSubcategory: data });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  // Детали курса (уроки)
+  fetchCourseDetail: async (id) => {
+    set({ isLoading: true, currentCourse: null });
+    try {
+      const { data } = await api.get<ICourse>(`/courses/${id}`);
+      set({ currentCourse: data });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  // Детали теста
+  fetchTestDetail: async (id) => {
+    set({ isLoading: true, currentTest: null });
+    try {
+      const { data } = await api.get<ITest>(`/tests/${id}`);
+      set({ currentTest: data });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  // Логика прохождения урока
   completeMaterial: async (materialId) => {
     try {
       await api.post(`/materials/${materialId}/complete`);
-      
-      // Оптимистичное обновление: меняем статус в сторе не дожидаясь рефетча
       const current = get().currentCourse;
       if (current) {
-        const updatedMaterials = current.materials.map(m => 
-          m.id === materialId ? { ...m, isCompleted: true } : m
+        const updated = current.materials.map((m) =>
+          m.id === materialId ? { ...m, isCompleted: true } : m,
         );
-        set({ currentCourse: { ...current, materials: updatedMaterials } });
+        set({ currentCourse: { ...current, materials: updated } });
       }
     } catch (e) {
-      console.error("Не удалось завершить материал", e);
+      console.error("Error completing material", e);
     }
   },
 
-  submitTest: async (testId, answers) => {
+  // Отправка результатов теста
+  submitTest: async (testId, payload) => {
+    set({ isLoading: true });
     try {
-      const response = await api.post(`/tests/${testId}/submit`, { answers });
-      return response.data; // Возвращаем результат (баллы, прошел/не прошел)
-    } catch (e) {
-      console.error("Ошибка при отправке теста", e);
-      throw e;
+      const { data } = await api.post(`/tests/${testId}/submit`, payload);
+      return data;
+    } finally {
+      set({ isLoading: false });
     }
+  },
+
+fetchMaterialContent: async (path: string) => {
+  try {
+    const baseUrl = import.meta.env.VITE_API_URL;
+    const fullPath = `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+    
+    const response = await fetch(fullPath);
+    if (!response.ok) throw new Error(`Файл не найден по адресу: ${fullPath}`);
+    
+    return await response.text();
+  } catch (e) {
+    console.error("Markdown Fetch Error:", e);
+    return "Ошибка загрузки контента урока. Проверьте путь к файлу на сервере.";
   }
+},
 }));

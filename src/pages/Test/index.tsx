@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ChevronLeft,
@@ -8,100 +8,111 @@ import {
   Trophy,
 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { useUserStore } from "@/shared/store/useUserStore";
-
-const TEST_DATA = {
-  id: 1,
-  name: "Стандарты обслуживания",
-  passing_score: 80,
-  questions: [
-    {
-      id: 101,
-      text: "Как правильно приветствовать покупателя в Зоозавр?",
-      options: [
-        { id: "a", text: "Просто кивнуть" },
-        {
-          id: "b",
-          text: "Улыбнуться и сказать: 'Добрый день! Чем могу помочь?'",
-        },
-        { id: "c", text: "Ждать, пока он сам заговорит" },
-      ],
-      correct_option: "b",
-      points: 50,
-    },
-    {
-      id: 102,
-      text: "Можно ли заходить в торговый зал без бейджа?",
-      options: [
-        { id: "a", text: "Да, если все меня знают" },
-        { id: "b", text: "Только во время приемки товара" },
-        { id: "c", text: "Нет, бейдж обязателен" },
-      ],
-      correct_option: "c",
-      points: 50,
-    },
-  ],
-};
+import { useCourseStore } from "@/shared/store/useCourseStore";
+import type { IQuestion } from "@/shared/types";
 
 export default function TestPage() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  // Подключаем функции сохранения из Store
-  const { addXP, completeCourse } = useUserStore();
+  const { currentTest, fetchTestDetail, submitTest, isLoading } =
+    useCourseStore();
 
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState<number>(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [score, setScore] = useState(0);
-  const [isFinished, setIsFinished] = useState(false);
+  const [answers, setAnswers] = useState<any[]>([]);
+  const [isFinished, setIsFinished] = useState<boolean>(false);
+  const [resultData, setResultData] = useState<any>(null);
 
-  const currentQuestion = TEST_DATA.questions[currentStep];
-
-  const handleNext = () => {
-    let finalScore = score;
-    if (selectedOption === currentQuestion.correct_option) {
-      finalScore += currentQuestion.points;
-      setScore(finalScore);
+  useEffect(() => {
+    if (id) {
+      fetchTestDetail(id);
     }
+  }, [id, fetchTestDetail]);
 
-    if (currentStep < TEST_DATA.questions.length - 1) {
+  if (isLoading && !currentTest) {
+    return (
+      <div className="p-10 text-center font-black animate-pulse text-slate-900 uppercase tracking-tighter">
+        ЗАГРУЗКА ТЕСТА...
+      </div>
+    );
+  }
+
+  if (!currentTest) return null;
+
+  const currentQuestion: IQuestion = currentTest.questions[currentStep];
+
+  const handleNext = async () => {
+    if (!selectedOption) return;
+
+    const isCorrect = selectedOption === currentQuestion.correctAnswer;
+    const newAnswer = {
+      questionId: currentQuestion.id,
+      selected: selectedOption,
+      isCorrect,
+    };
+
+    const updatedAnswers = [...answers, newAnswer];
+    setAnswers(updatedAnswers);
+
+    if (currentStep < currentTest.questions.length - 1) {
       setCurrentStep((prev) => prev + 1);
       setSelectedOption(null);
     } else {
-      // Сохраняем прогресс, если тест завершен
-      if (finalScore >= TEST_DATA.passing_score) {
-        addXP(finalScore);
-        completeCourse(Number(id) || TEST_DATA.id);
+      const correctCount = updatedAnswers.filter((a) => a.isCorrect).length;
+      const finalScore = Math.round(
+        (correctCount / currentTest.questions.length) * 100,
+      );
+
+      try {
+        const res = await submitTest(Number(id), {
+          score: finalScore,
+          answers: updatedAnswers,
+        });
+        setResultData(res);
+        setIsFinished(true);
+      } catch (e) {
+        console.error("Ошибка при отправке теста:", e);
       }
-      setIsFinished(true);
     }
   };
 
   if (isFinished) {
-    const isPassed = score >= TEST_DATA.passing_score;
+    const score = resultData?.result?.score ?? 0;
+    const isPassed = score >= currentTest.passingScore;
+
     return (
-      <div className="p-6 flex flex-col items-center justify-center min-h-full text-center space-y-6">
+      <div className="p-6 flex flex-col items-center justify-center min-h-full text-center space-y-6 bg-white">
         <div
-          className={`w-24 h-24 rounded-full flex items-center justify-center ${isPassed ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"}`}>
+          className={`w-24 h-24 rounded-full flex items-center justify-center shadow-2xl transition-transform duration-700 scale-110 ${
+            isPassed
+              ? "bg-green-100 text-green-600 shadow-green-100"
+              : "bg-red-100 text-red-600 shadow-red-100"
+          }`}>
           {isPassed ? <Trophy size={48} /> : <XCircle size={48} />}
         </div>
-        <div>
-          <h2 className="text-2xl font-black italic uppercase tracking-tighter">
-            {isPassed ? "Тест пройден!" : "Не повезло..."}
+
+        <div className="space-y-2">
+          <h2 className="text-3xl font-black italic uppercase tracking-tighter text-slate-900">
+            {isPassed ? "Тест пройден!" : "Попробуй еще раз"}
           </h2>
-          <p className="text-slate-500 mt-2 italic font-medium">
+          <p className="text-slate-500 font-bold italic">
             Ваш результат:{" "}
-            <span className="font-black text-slate-900">{score}</span> из 100
-            баллов
+            <span
+              className={`font-black ${isPassed ? "text-green-600" : "text-red-600"}`}>
+              {score}%
+            </span>
           </p>
         </div>
+
         <div className="w-full p-4 bg-slate-50 rounded-3xl border border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400">
-          Минимальный балл для зачета: {TEST_DATA.passing_score}
+          Минимальный порог: {currentTest.passingScore}%
         </div>
+
         <Button
           onClick={() => navigate("/courses")}
-          className="w-full h-14 rounded-2xl bg-slate-900 text-white font-black shadow-xl shadow-slate-200 active:scale-95 transition-all">
-          ВЕРНУТЬСЯ К КУРСАМ
+          className="w-full h-16 rounded-[24px] bg-slate-900 text-white font-black shadow-xl hover:bg-slate-800 active:scale-95 transition-all">
+          ВЕРНУТЬСЯ В БИБЛИОТЕКУ
         </Button>
       </div>
     );
@@ -110,45 +121,44 @@ export default function TestPage() {
   return (
     <div className="flex flex-col min-h-full bg-white">
       <div className="p-4 flex items-center justify-between border-b sticky top-0 bg-white/80 backdrop-blur-md z-10">
-        <button onClick={() => navigate(-1)} className="p-2">
-          <ChevronLeft />
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 hover:bg-slate-50 rounded-full transition-colors">
+          <ChevronLeft className="text-slate-900" />
         </button>
         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-          Вопрос {currentStep + 1} из {TEST_DATA.questions.length}
+          Вопрос {currentStep + 1} из {currentTest.questions.length}
         </span>
-        <div className="w-8" />
+        <div className="w-10" />
       </div>
 
       <div className="h-1.5 w-full bg-slate-100">
         <div
-          className="h-full bg-green-500 transition-all duration-500"
+          className="h-full bg-green-500 transition-all duration-500 ease-out"
           style={{
-            width: `${((currentStep + 1) / TEST_DATA.questions.length) * 100}%`,
+            width: `${((currentStep + 1) / currentTest.questions.length) * 100}%`,
           }}
         />
       </div>
 
       <div className="p-6 flex-1 flex flex-col">
-        <h2 className="text-xl font-black text-slate-900 mb-8 leading-tight italic uppercase tracking-tighter">
-          {currentQuestion.text}
+        <h2 className="text-2xl font-black text-slate-900 mb-8 leading-tight italic uppercase tracking-tighter">
+          {currentQuestion.question}
         </h2>
 
         <div className="space-y-3 flex-1">
-          {currentQuestion.options.map((option) => (
+          {currentQuestion.options.map((option: string) => (
             <button
-              key={option.id}
-              onClick={() => setSelectedOption(option.id)}
+              key={option}
+              onClick={() => setSelectedOption(option)}
               className={`w-full p-5 text-left rounded-3xl border-2 transition-all flex items-center justify-between group ${
-                selectedOption === option.id
-                  ? "border-slate-900 bg-slate-900 text-white shadow-xl"
-                  : "border-slate-100 bg-white hover:border-slate-300"
+                selectedOption === option
+                  ? "border-slate-900 bg-slate-900 text-white shadow-xl translate-x-1"
+                  : "border-slate-100 bg-white hover:border-slate-200 text-slate-700"
               }`}>
-              <span
-                className={`font-bold text-sm ${selectedOption === option.id ? "text-white" : "text-slate-700"}`}>
-                {option.text}
-              </span>
-              {selectedOption === option.id && (
-                <CheckCircle2 className="text-green-400" size={20} />
+              <span className="font-bold text-sm tracking-tight">{option}</span>
+              {selectedOption === option && (
+                <CheckCircle2 className="text-green-400 shrink-0" size={20} />
               )}
             </button>
           ))}
@@ -156,17 +166,23 @@ export default function TestPage() {
 
         <div className="pt-6">
           <Button
-            disabled={!selectedOption}
+            disabled={!selectedOption || isLoading}
             onClick={handleNext}
             className={`w-full h-16 rounded-[24px] font-black text-lg shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 ${
               selectedOption
                 ? "bg-green-600 text-white shadow-green-100"
-                : "bg-slate-200 text-slate-400 shadow-none"
+                : "bg-slate-100 text-slate-400 shadow-none cursor-not-allowed"
             }`}>
-            {currentStep === TEST_DATA.questions.length - 1
-              ? "ЗАВЕРШИТЬ"
-              : "ДАЛЕЕ"}
-            <ArrowRight size={20} />
+            {isLoading ? (
+              "ОБРАБОТКА..."
+            ) : (
+              <>
+                {currentStep === currentTest.questions.length - 1
+                  ? "ЗАВЕРШИТЬ"
+                  : "ДАЛЕЕ"}
+                <ArrowRight size={20} />
+              </>
+            )}
           </Button>
         </div>
       </div>
