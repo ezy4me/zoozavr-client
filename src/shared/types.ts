@@ -10,33 +10,37 @@ export interface IQuestion {
   correctAnswer: string;
 }
 
+export interface ITestResult {
+  id: number;
+  score: number;
+  userId: number;
+  testId: number;
+}
+
 export interface ITest {
   id: number;
-  name: string;
+  courseId: number;
   passingScore: number;
-  maxScore: number;
-  attempts: number;
   questions: IQuestion[];
+  results?: ITestResult[];
 }
 
 export interface IMaterial {
   id: number;
   name: string;
   contentPath: string;
-  content?: string;
-  isCompleted: boolean;
   orderNumber: number;
+  isCompleted: boolean;
 }
 
 export interface ICourse {
   id: number;
   name: string;
   description: string;
-  testId?: number;
-  materials: IMaterial[];
-  minPoints: number;
   maxPoints: number;
-  subcategoryId: number;
+  minPoints: number;
+  materials: IMaterial[];
+  tests: ITest[]; 
 }
 
 export interface ISubcategory {

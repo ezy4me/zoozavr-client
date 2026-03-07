@@ -1,9 +1,18 @@
+import { useEffect } from "react"; // Добавляем useEffect
 import { useRegisterSW } from "virtual:pwa-register/react";
 import { AppRouter } from "@/app/router";
 import { Button } from "@/shared/ui/button";
 import { RefreshCw, X } from "lucide-react";
+import { useUserStore } from "@/shared/store/useUserStore"; // Импортируем стор
 
 function App() {
+  const { checkAuth } = useUserStore(); // Берем метод проверки авторизации
+
+  // Инициализация пользователя при загрузке приложения
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
   const {
     offlineReady: [offlineReady, setOfflineReady],
     needRefresh: [needRefresh, setNeedRefresh],

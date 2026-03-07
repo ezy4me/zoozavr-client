@@ -13,6 +13,7 @@ import CourseDetailPage from "@/pages/CourseDetail";
 import MaterialPage from "@/pages/Material";
 import LeaderboardPage from "@/pages/Leaderboard";
 import ProfilePage from "@/pages/Profile";
+import CompletedCoursesPage from "@/pages/CompletedCourses";
 import TestPage from "@/pages/Test";
 import { ProtectedRoute } from "./providers/ProtectedRoute";
 import { BottomNav } from "@/widgets/BottomNav/ui/BottomNav";
@@ -60,6 +61,7 @@ const router = createBrowserRouter(
         { path: "/material/:id", element: <MaterialPage /> },
         { path: "/leaderboard", element: <LeaderboardPage /> },
         { path: "/profile", element: <ProfilePage /> },
+        { path: "/profile/completed", element: <CompletedCoursesPage /> },
         { path: "/test/:id", element: <TestPage /> },
         { path: "/settings", element: <SettingsPage /> },
         { path: "*", element: <NotFoundPage /> },

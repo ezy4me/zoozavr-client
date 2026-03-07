@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import confetti from "canvas-confetti"; // Не забудь установить: npm install canvas-confetti
 import {
   ChevronLeft,
   CheckCircle2,
@@ -9,6 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { useCourseStore } from "@/shared/store/useCourseStore";
+import { useUserStore } from "@/shared/store/useUserStore";
 import type { IQuestion } from "@/shared/types";
 
 export default function TestPage() {
@@ -17,12 +19,13 @@ export default function TestPage() {
 
   const { currentTest, fetchTestDetail, submitTest, isLoading } =
     useCourseStore();
+  const { checkAuth } = useUserStore();
 
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [answers, setAnswers] = useState<any[]>([]);
   const [isFinished, setIsFinished] = useState<boolean>(false);
-  const [resultData, setResultData] = useState<any>(null);
+  const [localScore, setLocalScore] = useState<number>(0);
 
   useEffect(() => {
     if (id) {
@@ -64,29 +67,47 @@ export default function TestPage() {
         (correctCount / currentTest.questions.length) * 100,
       );
 
+      setLocalScore(finalScore);
+
       try {
-        const res = await submitTest(Number(id), {
+        await submitTest(Number(id), {
           score: finalScore,
           answers: updatedAnswers,
         });
-        setResultData(res);
+
+        if (finalScore >= currentTest.passingScore) {
+          // 🎉 ЗАПУСКАЕМ ПРАЗДНИК!
+          confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ["#22c55e", "#facc15", "#3b82f6"],
+          });
+
+          // Обновляем профиль, чтобы заблокировать кнопку теста на главной
+          await checkAuth();
+        }
+
         setIsFinished(true);
       } catch (e) {
         console.error("Ошибка при отправке теста:", e);
+        setIsFinished(true);
       }
     }
   };
 
+  // --- ЛОГИКА ЭКРАНА РЕЗУЛЬТАТОВ ---
   if (isFinished) {
-    const score = resultData?.result?.score ?? 0;
+    const score = localScore;
     const isPassed = score >= currentTest.passingScore;
+    const backPath = isPassed ? "/courses" : `/course/${currentTest.courseId}`;
 
     return (
-      <div className="p-6 flex flex-col items-center justify-center min-h-full text-center space-y-6 bg-white">
+      <div className="p-6 flex flex-col items-center justify-center min-h-screen text-center space-y-6 bg-white animate-in fade-in duration-500">
         <div
-          className={`w-24 h-24 rounded-full flex items-center justify-center shadow-2xl transition-transform duration-700 scale-110 ${
+          className={`w-24 h-24 rounded-full flex items-center justify-center shadow-2xl transition-transform duration-1000 scale-110 ${
             isPassed
-              ? "bg-green-100 text-green-600 shadow-green-100"
+              ? "bg-green-100 text-green-600 shadow-green-100 animate-bounce"
               : "bg-red-100 text-red-600 shadow-red-100"
           }`}>
           {isPassed ? <Trophy size={48} /> : <XCircle size={48} />}
@@ -94,7 +115,7 @@ export default function TestPage() {
 
         <div className="space-y-2">
           <h2 className="text-3xl font-black italic uppercase tracking-tighter text-slate-900">
-            {isPassed ? "Тест пройден!" : "Попробуй еще раз"}
+            {isPassed ? "Тест пройден!" : "Нужно повторить"}
           </h2>
           <p className="text-slate-500 font-bold italic">
             Ваш результат:{" "}
@@ -105,21 +126,32 @@ export default function TestPage() {
           </p>
         </div>
 
+        {!isPassed && (
+          <p className="text-slate-400 text-xs font-bold uppercase px-4 leading-relaxed">
+            Вам не хватило баллов. Пожалуйста, изучите материалы курса еще раз.
+          </p>
+        )}
+
         <div className="w-full p-4 bg-slate-50 rounded-3xl border border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400">
           Минимальный порог: {currentTest.passingScore}%
         </div>
 
         <Button
-          onClick={() => navigate("/courses")}
-          className="w-full h-16 rounded-[24px] bg-slate-900 text-white font-black shadow-xl hover:bg-slate-800 active:scale-95 transition-all">
-          ВЕРНУТЬСЯ В БИБЛИОТЕКУ
+          onClick={() => navigate(backPath)}
+          className={`w-full h-16 rounded-[24px] font-black shadow-xl transition-all active:scale-95 ${
+            isPassed
+              ? "bg-slate-900 text-white hover:bg-slate-800"
+              : "bg-red-600 text-white hover:bg-red-700 shadow-red-100"
+          }`}>
+          {isPassed ? "ВЕРНУТЬСЯ В БИБЛИОТЕКУ" : "ПОВТОРИТЬ МАТЕРИАЛЫ"}
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-full bg-white">
+    <div className="flex flex-col min-h-screen bg-white">
+      {/* Шапка */}
       <div className="p-4 flex items-center justify-between border-b sticky top-0 bg-white/80 backdrop-blur-md z-10">
         <button
           onClick={() => navigate(-1)}
@@ -132,6 +164,7 @@ export default function TestPage() {
         <div className="w-10" />
       </div>
 
+      {/* Прогресс-бар */}
       <div className="h-1.5 w-full bg-slate-100">
         <div
           className="h-full bg-green-500 transition-all duration-500 ease-out"

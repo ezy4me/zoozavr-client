@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import api from "../api";
+import { useUserStore } from "./useUserStore";
 import type { ICourse, ITest, ICategory, ISubcategory } from "../types";
 
 interface CourseState {
@@ -9,24 +10,17 @@ interface CourseState {
   currentCourse: ICourse | null;
   currentTest: ITest | null;
   isLoading: boolean;
-
-  // Методы загрузки
   fetchCategories: () => Promise<void>;
   fetchCategoryDetail: (id: string | number) => Promise<void>;
   fetchSubcategoryDetail: (id: string | number) => Promise<void>;
   fetchCourseDetail: (id: string | number) => Promise<void>;
   fetchTestDetail: (id: string | number) => Promise<void>;
   fetchMaterialContent: (path: string) => Promise<string>;
-
-  // Методы действий
   completeMaterial: (materialId: number) => Promise<void>;
   submitTest: (
     testId: number,
     payload: { score: number; answers: any },
-  ) => Promise<{
-    message: string;
-    result: { score: number };
-  }>;
+  ) => Promise<any>;
 }
 
 export const useCourseStore = create<CourseState>((set, get) => ({
@@ -57,7 +51,6 @@ export const useCourseStore = create<CourseState>((set, get) => ({
     }
   },
 
-  // Получаем подкатегорию и её курсы
   fetchSubcategoryDetail: async (id) => {
     set({ isLoading: true, currentSubcategory: null });
     try {
@@ -68,9 +61,8 @@ export const useCourseStore = create<CourseState>((set, get) => ({
     }
   },
 
-  // Детали курса (уроки)
   fetchCourseDetail: async (id) => {
-    set({ isLoading: true, currentCourse: null });
+    set({ isLoading: true });
     try {
       const { data } = await api.get<ICourse>(`/courses/${id}`);
       set({ currentCourse: data });
@@ -79,7 +71,6 @@ export const useCourseStore = create<CourseState>((set, get) => ({
     }
   },
 
-  // Детали теста
   fetchTestDetail: async (id) => {
     set({ isLoading: true, currentTest: null });
     try {
@@ -90,45 +81,52 @@ export const useCourseStore = create<CourseState>((set, get) => ({
     }
   },
 
-  // Логика прохождения урока
-  completeMaterial: async (materialId) => {
+  completeMaterial: async (materialId: number) => {
     try {
+      // 1. Фиксируем прохождение на бэкенде
       await api.post(`/materials/${materialId}/complete`);
+
+      // 2. Локально обновляем статус в текущем курсе для мгновенной реакции UI
       const current = get().currentCourse;
       if (current) {
-        const updated = current.materials.map((m) =>
-          m.id === materialId ? { ...m, isCompleted: true } : m,
+        const updatedMaterials = current.materials.map((m) =>
+          Number(m.id) === Number(materialId) ? { ...m, isCompleted: true } : m,
         );
-        set({ currentCourse: { ...current, materials: updated } });
+        set({ currentCourse: { ...current, materials: updatedMaterials } });
       }
+
+      // 3. СИНХРОНИЗАЦИЯ: обновляем XP, уровень и список пройденного в сторе юзера
+      await useUserStore.getState().checkAuth();
     } catch (e) {
-      console.error("Error completing material", e);
+      console.error("Ошибка при завершении материала:", e);
     }
   },
 
-  // Отправка результатов теста
   submitTest: async (testId, payload) => {
     set({ isLoading: true });
     try {
       const { data } = await api.post(`/tests/${testId}/submit`, payload);
+      // Обновляем профиль после теста, так как могли измениться XP/курсы
+      await useUserStore.getState().checkAuth();
       return data;
     } finally {
       set({ isLoading: false });
     }
   },
 
-fetchMaterialContent: async (path: string) => {
-  try {
-    const baseUrl = import.meta.env.VITE_API_URL;
-    const fullPath = `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
-    
-    const response = await fetch(fullPath);
-    if (!response.ok) throw new Error(`Файл не найден по адресу: ${fullPath}`);
-    
-    return await response.text();
-  } catch (e) {
-    console.error("Markdown Fetch Error:", e);
-    return "Ошибка загрузки контента урока. Проверьте путь к файлу на сервере.";
-  }
-},
+  fetchMaterialContent: async (path: string) => {
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      const cleanBase = baseUrl.replace(/\/$/, "");
+      const cleanPath = path.replace(/^\//, "");
+      const fullUrl = `${cleanBase}/${cleanPath}`;
+
+      const response = await fetch(fullUrl);
+      if (!response.ok) throw new Error("Файл не найден");
+      return await response.text();
+    } catch (e) {
+      console.error(e);
+      return "Ошибка загрузки контента урока.";
+    }
+  },
 }));

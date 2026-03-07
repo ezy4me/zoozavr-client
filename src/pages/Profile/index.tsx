@@ -2,16 +2,19 @@ import { useNavigate } from "react-router-dom";
 import {
   Settings,
   LogOut,
-  Award,
   BookOpen,
   Zap,
   ChevronRight,
+  Medal,
 } from "lucide-react";
 import { useUserStore } from "@/shared/store/useUserStore";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { xp, completedCourses, name, logout } = useUserStore();
+
+  // Логика уровней: каждые 1000 XP = +1 уровень
+  const userLevel = Math.floor(xp / 1000) + 1;
 
   const userStats = [
     {
@@ -27,62 +30,77 @@ export default function ProfilePage() {
       color: "bg-orange-50 text-orange-600",
     },
     {
-      label: "Награды",
-      value: "4",
-      icon: <Award size={16} />,
-      color: "bg-purple-50 text-purple-600",
+      label: "Уровень",
+      value: userLevel.toString(),
+      icon: <Medal size={16} />,
+      color: "bg-green-50 text-green-600",
     },
   ];
 
   const handleLogout = async () => {
-    await logout(); 
-    navigate("/login");
+    try {
+      await logout();
+      navigate("/login");
+    } catch (e) {
+      console.error("Ошибка при выходе:", e);
+    }
   };
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="p-6 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Заголовок */}
       <div className="flex justify-between items-start">
         <div className="space-y-1">
           <h1 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter">
             Профиль
           </h1>
-          <p className="text-slate-500 font-medium text-sm">
-            Сотрудник Зоозавра
+          <p className="text-slate-500 font-bold text-[10px] uppercase tracking-widest">
+            {userLevel > 5 ? "⚡️ Эксперт Зоозавра" : "🦖 Сотрудник Зоозавра"}
           </p>
         </div>
         <button
           onClick={() => navigate("/settings")}
-          className="p-3 bg-slate-100 rounded-2xl text-slate-600 active:scale-95 transition-all hover:bg-slate-200">
+          className="p-3 bg-slate-100 rounded-2xl text-slate-600 active:scale-90 transition-all hover:bg-slate-200 shadow-sm">
           <Settings size={22} />
         </button>
       </div>
 
-      <div className="p-6 rounded-[32px] bg-slate-900 text-white flex items-center gap-6 relative overflow-hidden shadow-xl shadow-slate-200">
-        <div className="w-20 h-20 bg-white/10 rounded-[24px] flex items-center justify-center text-4xl border border-white/20 backdrop-blur-sm relative z-10">
+      {/* Карточка пользователя */}
+      <div className="p-6 rounded-[32px] bg-slate-900 text-white flex items-center gap-6 relative overflow-hidden shadow-2xl shadow-slate-300">
+        <div className="w-20 h-20 bg-white/10 rounded-[24px] flex items-center justify-center text-4xl border border-white/20 backdrop-blur-md relative z-10 shadow-inner">
           🦖
         </div>
         <div className="relative z-10">
-          <h2 className="text-xl font-bold">{name || "Загрузка..."}</h2>
-          <p className="text-green-400 text-[10px] font-black uppercase tracking-[0.2em] mt-1">
-            Команда Зоозавр
-          </p>
+          <h2 className="text-xl font-black truncate max-w-[180px] tracking-tight">
+            {name || "Коллега"}
+          </h2>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+            <p className="text-green-400 text-[9px] font-black uppercase tracking-[0.2em]">
+              В сети
+            </p>
+          </div>
         </div>
-        <div className="absolute -right-4 -bottom-6 text-7xl opacity-10 rotate-12 italic font-black select-none uppercase">
-          Зоозавр
+        {/* Декоративная подложка */}
+        <div className="absolute -right-6 -bottom-8 text-8xl opacity-[0.07] rotate-12 italic font-black select-none uppercase pointer-events-none">
+          ZOO
         </div>
       </div>
 
+      {/* Статистика */}
       <div className="grid grid-cols-3 gap-3">
         {userStats.map((s, i) => (
           <div
             key={i}
-            className="p-4 rounded-[28px] bg-white border border-slate-100 flex flex-col items-center text-center gap-2 shadow-sm">
-            <div className={`p-2 rounded-xl ${s.color}`}>{s.icon}</div>
+            className="p-4 rounded-[28px] bg-white border border-slate-100 flex flex-col items-center text-center gap-2 shadow-sm transition-all active:scale-95 hover:border-slate-200">
+            <div className={`p-2 rounded-xl ${s.color} shadow-sm`}>
+              {s.icon}
+            </div>
             <div>
-              <p className="text-lg font-black text-slate-900 leading-none">
+              <p className="text-lg font-black text-slate-900 leading-none tracking-tighter">
                 {s.value}
               </p>
-              <p className="text-[10px] text-slate-400 font-bold uppercase mt-1 tracking-tighter">
+              <p className="text-[8px] text-slate-400 font-black uppercase mt-1 tracking-widest">
                 {s.label}
               </p>
             </div>
@@ -90,36 +108,53 @@ export default function ProfilePage() {
         ))}
       </div>
 
+      {/* Управление */}
       <div className="space-y-3">
-        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">
+        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">
           Личные достижения
         </h3>
 
-        <button className="w-full flex items-center justify-between p-5 bg-white border border-slate-100 rounded-[28px] active:bg-slate-50 transition-all shadow-sm">
+        <button
+          onClick={() => navigate("/profile/completed")}
+          className="w-full group flex items-center justify-between p-5 bg-white border border-slate-100 rounded-[30px] active:scale-[0.98] active:bg-slate-50 transition-all shadow-sm hover:border-green-200">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center">
-              <Award size={20} />
+            <div className="w-11 h-11 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <BookOpen size={22} />
             </div>
-            <span className="font-bold text-slate-900 text-sm">
-              Мои сертификаты
-            </span>
+            <div className="text-left">
+              <span className="block font-black text-slate-900 text-sm uppercase tracking-tighter">
+                Мои успехи
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">
+                Пройденные тесты и курсы
+              </span>
+            </div>
           </div>
-          <ChevronRight size={18} className="text-slate-300" />
+          <ChevronRight
+            size={18}
+            className="text-slate-300 group-hover:translate-x-1 transition-transform"
+          />
         </button>
 
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-4 p-5 text-red-500 bg-red-50/30 border border-red-50 rounded-[28px] active:bg-red-50 transition-all">
-          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
+          className="w-full flex items-center gap-4 p-5 text-red-500 bg-red-50/20 border border-red-100/50 rounded-[30px] active:scale-[0.98] transition-all group hover:bg-red-50">
+          <div className="w-11 h-11 bg-white rounded-2xl flex items-center justify-center shadow-sm group-hover:rotate-12 transition-transform">
             <LogOut size={20} />
           </div>
-          <span className="font-bold text-sm">Выйти из системы</span>
+          <span className="font-black text-sm uppercase tracking-tighter">
+            Выход
+          </span>
         </button>
       </div>
 
-      <p className="text-center text-[10px] text-slate-300 font-bold uppercase tracking-widest">
-        Обучение Зоозавр v1.0.2
-      </p>
+      {/* Инфо */}
+      <div className="pt-4 space-y-2">
+        <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent w-full" />
+        <p className="text-center text-[9px] text-slate-300 font-black uppercase tracking-[0.3em]">
+          Zoozavr LMS • 2026
+        </p>
+      </div>
     </div>
   );
 }
