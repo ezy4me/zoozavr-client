@@ -41,7 +41,7 @@ export default function CourseDetailPage() {
       (r: any) => r.score >= (currentCourse.tests?.[0].passingScore ?? 80),
     );
 
-    return inCompleted || inActivePassed || !!hasResults;
+    return inActivePassed || !!hasResults;
   }, [id, completedCourses, activeCourses, currentCourse]);
 
   if (isLoading || !currentCourse)
@@ -159,8 +159,6 @@ export default function CourseDetailPage() {
               </div>
             )}
           </Button>
-
-          
         </div>
       </div>
     </div>
